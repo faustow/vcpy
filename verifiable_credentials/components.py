@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from attrdict import AttrDict
 from web3 import Web3
 
-from .helpers import NOW, factor_in_new_try
+from .helpers import NOW, factor_in_new_try, validate_required_fields_interactively
 
 
 class Issuer:
@@ -123,7 +123,12 @@ class EthereumAnchorHandler(AnchorHandler):
     :param gas_limit: (optional) desired gas limit for the anchoring transaction
     :param account_to: (optional) desired destination of the anchoring transaction
     :param chain_name: (optional) one of ethereumRopsten or ethereumMainnet
+
+    The fields listed in INTERACTIVELY_REQUIRED_FIELDS can be left out for an extra layer of security.
+    In that case, the user will be prompted for input.
+
     """
+    INTERACTIVELY_REQUIRED_FIELDS = ['node_url', 'private_key', 'public_key', 'key_created_at']
     signature_field = 'ETHData'
 
     def __init__(
@@ -142,6 +147,8 @@ class EthereumAnchorHandler(AnchorHandler):
         self.private_key = private_key
         self.public_key = public_key
         self.key_created_at = key_created_at
+        validate_required_fields_interactively(self, self.INTERACTIVELY_REQUIRED_FIELDS)
+
         self.max_retry = max_retry
         self.gas_price = gas_price
         self.gas_limit = gas_limit
