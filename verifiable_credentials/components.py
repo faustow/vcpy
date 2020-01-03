@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
+from time import sleep
 
 from attrdict import AttrDict
 from web3 import Web3
 
-from .helpers import NOW, factor_in_new_try, validate_required_fields_interactively
+from .helpers import NOW, factor_in_new_try, validate_required_fields_interactively, validate_required_fields
 
 
 class Issuer:
@@ -24,6 +25,7 @@ class Issuer:
     Note: All three of signature_name, signature_job_title and signature_image must exist in order for the signature
     section to be added to the Blockcert.
     """
+    REQUIRED_FIELDS = ["name", "url", "email", "revocation_list", "public_key"]
 
     def __init__(
             self: str,
@@ -47,6 +49,21 @@ class Issuer:
         self.signature_job_title = signature_job_title
         self.signature_image = signature_image
 
+        validate_required_fields(self, self.REQUIRED_FIELDS)
+
+    def to_dict(self):
+        return dict(
+            name=self.name,
+            url=self.url,
+            email=self.email,
+            image=self.image,
+            revocation_list=self.revocation_list,
+            public_key=self.public_key,
+            signature_name=self.signature_name,
+            signature_job_title=self.signature_job_title,
+            signature_image=self.signature_image,
+        )
+
 
 class Assertion:
     """A basic version of an Assertion as defined by the Blockcerts standard.
@@ -60,6 +77,7 @@ class Assertion:
     :param narrative: narrative of the assertion
     :param display_html: (optional) valid HTML that will be displayed when validating in public validators
     """
+    REQUIRED_FIELDS = ['id', 'name', 'description', 'narrative']
 
     def __init__(self, id: str, name: str, description: str, image: str, narrative: str, display_html: str = ""):
         self.id = id
@@ -68,6 +86,17 @@ class Assertion:
         self.image = image
         self.narrative = narrative
         self.display_html = display_html
+        validate_required_fields(self, self.REQUIRED_FIELDS)
+
+    def to_dict(self):
+        return dict(
+            id=self.id,
+            name=self.name,
+            description=self.description,
+            image=self.image,
+            narrative=self.narrative,
+            display_html=self.display_html,
+        )
 
 
 class Recipient:
@@ -80,12 +109,22 @@ class Recipient:
     :param public_key: public key of the recipient
     :param email_hashed: is the email hashed?
     """
+    REQUIRED_FIELDS = ['name', 'email', 'public_key']
 
     def __init__(self, name: str, email: str, public_key: str, email_hashed: bool = False):
         self.name = name
         self.email = email
         self.public_key = public_key
         self.email_hashed = email_hashed
+        validate_required_fields(self, self.REQUIRED_FIELDS)
+
+    def to_dict(self):
+        return dict(
+            name=self.name,
+            email=self.email,
+            public_key=self.public_key,
+            email_hashed=self.email_hashed,
+        )
 
 
 class AnchorHandler(ABC):
@@ -191,6 +230,7 @@ class EthereumAnchorHandler(AnchorHandler):
             except Exception as e:
                 if i >= self.max_retry - 1:
                     raise
+                sleep(10 * i)
                 continue
 
 
@@ -206,13 +246,15 @@ class Blockcert:
     :param issuer: Issuer object, contains info about who issues the Blockcert
     :param assertion: Assertion object, contains info about what is being claimed by the Issuer about the Recipient
     :param recipient: Recipient object, contains info about the entity receiving this Blockcert
+    :param expires_at: string representation of an expiration date, like "2025-02-07T23:52:16.636+00:00"
     """
 
-    def __init__(self, id: str, issuer: Issuer, assertion: Assertion, recipient: Recipient):
+    def __init__(self, id: str, issuer: Issuer, assertion: Assertion, recipient: Recipient, expires_at: str = ""):
         self.id = id
         self.issuer = issuer
         self.assertion = assertion
         self.recipient = recipient
+        self.expires_at = expires_at
         self.anchor_tx_id = None
         self.proof = None
 
@@ -272,7 +314,7 @@ class Blockcert:
             }
         }
         if self.assertion.display_html:
-            raw_dict["displayHtml"] = self.assertion.display_html,
+            raw_dict["displayHtml"] = self.assertion.display_html
         if self.issuer.signature_image and self.issuer.signature_job_title and self.issuer.signature_name:
             raw_dict['signatureLines'] = [
                 {
@@ -287,6 +329,8 @@ class Blockcert:
             ]
         if self.proof:
             raw_dict['signature'] = self.proof
+        if self.expires_at:
+            raw_dict['expires'] = self.expires_at
 
         return raw_dict
 

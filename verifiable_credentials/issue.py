@@ -50,16 +50,18 @@ class BlockcertsBatch(Batch):
     :param assertion: Assertion object, contains info about what is being claimed by the Issuer about the Recipient
     :param recipient: list of Recipient objects, they contain info about the entities receiving this Blockcert
     :param anchor_handler: AnchorHandler object, handles anchoring to a blockchain and updating the unsigned certs with
+    :param expires_at: string representation of an expiration date, like "2025-02-07T23:52:16.636+00:00"
     transaction id and merkle proof.
     """
     REQUIRED_FIELDS = ['issuer', 'assertion', 'recipients', 'anchor_handler']
 
     def __init__(self, issuer: Issuer, assertion: Assertion, recipients: List[Recipient],
-                 anchor_handler: AnchorHandler):
+                 anchor_handler: AnchorHandler, expires_at: str = ""):
         self.issuer = issuer
         self.assertion = assertion
         self.recipients = recipients
         self.anchor_handler = anchor_handler
+        self.expires_at = expires_at
 
         validate_required_fields(self, self.REQUIRED_FIELDS)
 
@@ -83,6 +85,7 @@ class BlockcertsBatch(Batch):
                 issuer=self.issuer,
                 assertion=self.assertion,
                 recipient=recipient,
+                expires_at=self.expires_at
             )
 
     def _get_cert_generator(self) -> Generator:
