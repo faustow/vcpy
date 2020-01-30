@@ -1,5 +1,6 @@
 import hashlib
 from datetime import datetime, timezone
+from typing import List, Any
 
 from chainpoint.chainpoint import MerkleTools
 from pycoin.serialize import h2b
@@ -77,6 +78,40 @@ class MerkleTree(object):
                     "chain": chain_name
                 }]}
             yield merkle_proof
+
+
+def validate_required_fields(some_object: Any, required_fields: List) -> None:
+    """Raise an exception if any of the required fields are missing from the object."""
+    for field in required_fields:
+        if not some_object.__getattribute__(field):
+            raise Exception(
+                f"The field '{field}' is required for object of class '{some_object.__class__.__name__}'."
+            )
+
+
+def validate_required_fields_interactively(some_object: Any, required_fields: List) -> None:
+    """Ask for user input if any of the required fields is missing."""
+    for field_name in required_fields:
+        ask_input_if_missing(some_object, field_name)
+
+
+def ask_input_if_missing(some_object: Any, field_name: str, attempt: int = 0, max_retries: int = 2) -> None:
+    """Asks the user for input if any of the required fields are missing from the object."""
+    if attempt >= max_retries:
+        raise Exception(
+            f"The field '{field_name}'is missing even after asking for user input, for "
+            f"object of class '{some_object.__class__.__name__}'."
+        )
+
+    attempt += 1
+    if not some_object.__getattribute__(field_name):
+        value = input(
+            f"The required field '{field_name}' cannot be empty for '{some_object.__class__.__name__}', please enter a "
+            f"valid value: "
+        )
+        some_object.__setattr__(field_name, value)
+        if not some_object.__getattribute__(field_name):
+            ask_input_if_missing(some_object, field_name, attempt=attempt, max_retries=max_retries)
 
 
 def factor_in_new_try(number, try_count) -> int:

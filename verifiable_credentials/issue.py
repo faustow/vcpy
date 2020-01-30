@@ -6,7 +6,7 @@ from typing import List, Generator, Dict, Tuple
 from pyld import jsonld
 
 from .components import Issuer, Assertion, Recipient, AnchorHandler, Blockcert, Batch
-from .helpers import MerkleTree, NOW
+from .helpers import MerkleTree, NOW, validate_required_fields
 
 
 class BlockcertsBatch(Batch):
@@ -50,16 +50,20 @@ class BlockcertsBatch(Batch):
     :param assertion: Assertion object, contains info about what is being claimed by the Issuer about the Recipient
     :param recipient: list of Recipient objects, they contain info about the entities receiving this Blockcert
     :param anchor_handler: AnchorHandler object, handles anchoring to a blockchain and updating the unsigned certs with
+    :param expires_at: string representation of an expiration date, like "2025-02-07T23:52:16.636+00:00"
     transaction id and merkle proof.
     """
+    REQUIRED_FIELDS = ['issuer', 'assertion', 'recipients', 'anchor_handler']
 
     def __init__(self, issuer: Issuer, assertion: Assertion, recipients: List[Recipient],
-                 anchor_handler: AnchorHandler):
-
+                 anchor_handler: AnchorHandler, expires_at: str = ""):
         self.issuer = issuer
         self.assertion = assertion
         self.recipients = recipients
         self.anchor_handler = anchor_handler
+        self.expires_at = expires_at
+
+        validate_required_fields(self, self.REQUIRED_FIELDS)
 
         self.issued_on = NOW
         self._create_unsigned_certs()
@@ -81,6 +85,7 @@ class BlockcertsBatch(Batch):
                 issuer=self.issuer,
                 assertion=self.assertion,
                 recipient=recipient,
+                expires_at=self.expires_at
             )
 
     def _get_cert_generator(self) -> Generator:
@@ -103,7 +108,6 @@ class BlockcertsBatch(Batch):
         return signed_certs
 
     def run(self) -> Tuple[str, Dict]:
-        # Input validation is made by each component's init method, so it will fail before getting here.
         # 1- Create merkle tree
         self.merkle_tree_generator = MerkleTree()
         self.merkle_tree_generator.populate(self.cert_generator)
