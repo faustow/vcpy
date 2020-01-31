@@ -9,13 +9,14 @@ There are many kinds of verifiable credentials like W3C's Verifiable Claims, Blo
 ## Table of contents
 
 1. [Why](#Why)
-2. [Status](#Status)
-3. [How to issue Blockcerts](#How-to-issue-Blockcerts)
-4. [Creating the required components](#Creating-the-required-components) <br>
-4.1 [Issuer](#Issuer)<br>
-4.2 [Assertion](#Assertion)<br>
-4.3 [Recipients](#Recipients)<br>
-4.4 [Anchor handler](#Anchor-handler)<br>
+1. [Status](#Status)
+1. [How to issue Blockcerts](#How-to-issue-Blockcerts)
+1. [Creating the required components](#Creating-the-required-components)
+    1. [Issuer](#Issuer)
+    1. [Assertion](#Assertion)
+    1. [Recipients](#Recipients)
+    1. [Anchor handler](#Anchor-handler)
+1. [Integrating `vcpy` into a web service](webservice.md)
 
 
 ## Why 
@@ -29,9 +30,10 @@ Because Clean Code is better than fancy code.
 
 
 ## Status
-- [ ] Blockcerts issuing: 
+- [x] Blockcerts issuing: 
   - [x] Batch issuing
   - [x] Anchor to Ethereum blockchain
+- [ ] Blockcerts addons
   - [ ] Anchor to Bitcoin, Polkadot or other blockchains
   - [ ] Additional global fields
   - [ ] Additional per-recipient fields
