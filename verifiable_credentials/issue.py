@@ -56,12 +56,15 @@ class BlockcertsBatch(Batch):
     REQUIRED_FIELDS = ['issuer', 'assertion', 'recipients', 'anchor_handler']
 
     def __init__(self, issuer: Issuer, assertion: Assertion, recipients: List[Recipient],
-                 anchor_handler: AnchorHandler, expires_at: str = ""):
+                 anchor_handler: AnchorHandler, expires_at: str = "", additional_global_fields: list = None,
+                 additional_per_recipient_fields: list = None):
         self.issuer = issuer
         self.assertion = assertion
         self.recipients = recipients
         self.anchor_handler = anchor_handler
         self.expires_at = expires_at
+        self.additional_global_fields = additional_global_fields
+        self.additional_per_recipient_fields = additional_per_recipient_fields
 
         validate_required_fields(self, self.REQUIRED_FIELDS)
 
@@ -85,7 +88,9 @@ class BlockcertsBatch(Batch):
                 issuer=self.issuer,
                 assertion=self.assertion,
                 recipient=recipient,
-                expires_at=self.expires_at
+                expires_at=self.expires_at,
+                additional_global_fields=self.additional_global_fields,
+                additional_per_recipient_fields=self.additional_per_recipient_fields
             )
 
     def _get_cert_generator(self) -> Generator:

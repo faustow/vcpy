@@ -4,7 +4,8 @@ from time import sleep
 from attrdict import AttrDict
 from web3 import Web3
 
-from .helpers import NOW, factor_in_new_try, validate_required_fields_interactively, validate_required_fields
+from .helpers import NOW, factor_in_new_try, validate_required_fields_interactively, validate_required_fields, \
+    set_dict_field
 
 
 class Issuer:
@@ -111,11 +112,13 @@ class Recipient:
     """
     REQUIRED_FIELDS = ['name', 'email', 'public_key']
 
-    def __init__(self, name: str, email: str, public_key: str, email_hashed: bool = False):
+    def __init__(self, name: str, email: str, public_key: str, email_hashed: bool = False,
+                 additional_fields: dict = None):
         self.name = name
         self.email = email
         self.public_key = public_key
         self.email_hashed = email_hashed
+        self.additional_fields = additional_fields
         validate_required_fields(self, self.REQUIRED_FIELDS)
 
     def to_dict(self):
@@ -124,6 +127,7 @@ class Recipient:
             email=self.email,
             public_key=self.public_key,
             email_hashed=self.email_hashed,
+            additional_fields=self.additional_fields,
         )
 
 
@@ -249,12 +253,15 @@ class Blockcert:
     :param expires_at: string representation of an expiration date, like "2025-02-07T23:52:16.636+00:00"
     """
 
-    def __init__(self, id: str, issuer: Issuer, assertion: Assertion, recipient: Recipient, expires_at: str = ""):
+    def __init__(self, id: str, issuer: Issuer, assertion: Assertion, recipient: Recipient, expires_at: str = "",
+                 additional_per_recipient_fields: list = None, additional_global_fields: list = None):
         self.id = id
         self.issuer = issuer
         self.assertion = assertion
         self.recipient = recipient
         self.expires_at = expires_at
+        self.additional_per_recipient_fields = additional_per_recipient_fields
+        self.additional_global_fields = additional_global_fields
         self.anchor_tx_id = None
         self.proof = None
 
@@ -331,6 +338,14 @@ class Blockcert:
             raw_dict['signature'] = self.proof
         if self.expires_at:
             raw_dict['expires'] = self.expires_at
+
+        if self.additional_global_fields:
+            for field in self.additional_global_fields:
+                raw_dict = set_dict_field(raw_dict, field['path'], field['value'])
+
+        if self.additional_per_recipient_fields:
+            for field in self.additional_per_recipient_fields:
+                raw_dict = set_dict_field(raw_dict, field['path'], self.recipient.additional_fields[field['field']])
 
         return raw_dict
 

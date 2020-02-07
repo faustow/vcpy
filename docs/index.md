@@ -30,8 +30,8 @@ Because Clean Code is better than fancy code.
   - [x] Anchor to Ethereum blockchain
 - [ ] Blockcerts addons
   - [ ] Anchor to Bitcoin, Polkadot or other blockchains
-  - [ ] Additional global fields
-  - [ ] Additional per-recipient fields
+  - [x] Additional global fields
+  - [x] Additional per-recipient fields
 - [ ] VCDMv1 issuing
   - [x] PoC example
   - [ ] Blockcerts-wrapping
