@@ -1,4 +1,5 @@
 import os
+import random
 from typing import List
 
 import pytest
@@ -55,9 +56,27 @@ def recipients() -> List[Recipient]:
 
 @pytest.fixture
 def eth_anchor_handler() -> EthereumAnchorHandler:
+    eth_account = random.choice(_get_eth_accounts())
     yield EthereumAnchorHandler(
         node_url=os.environ.get('ETH_NODE_URL'),
-        public_key=os.environ.get('PUBLIC_KEY'),
-        private_key=os.environ.get('PRIVATE_KEY'),
+        public_key=eth_account.get('public'),
+        private_key=eth_account.get('private'),
         key_created_at='2019-03-26T23:37:07.464654+00:00',
     )
+
+
+def _get_eth_accounts() -> List:
+    return [
+        dict(
+            public=os.environ.get('PUBLIC_KEY'),
+            private=os.environ.get('PRIVATE_KEY')
+        ),
+        dict(
+            public=os.environ.get('PUBLIC_KEY_2'),
+            private=os.environ.get('PRIVATE_KEY_2')
+        ),
+        dict(
+            public=os.environ.get('PUBLIC_KEY_3'),
+            private=os.environ.get('PRIVATE_KEY_3')
+        )
+    ]
