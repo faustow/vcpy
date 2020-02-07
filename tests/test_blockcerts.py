@@ -128,3 +128,92 @@ def test_issuing_with_images(issuer, assertion, recipients, eth_anchor_handler):
         assert this_cert['signatureLines'][0]['image'] == image_data
         assert this_cert['signatureLines'][0]['jobTitle'] == title
         assert this_cert['signatureLines'][0]['name'] == name
+
+
+def test_additional_per_recipient_fields(issuer, assertion, recipients, eth_anchor_handler):
+    EXPIRATION_DATE = "2018-02-07T23:52:16.636+00:00"
+    FOOD_DATA = "pizza"
+    ADDITIONAL_FIELDS = {
+        "expires": EXPIRATION_DATE,
+        "favorite_food": FOOD_DATA
+    }
+    for recipient in recipients:
+        recipient.additional_fields = ADDITIONAL_FIELDS
+
+    batch = issue.BlockcertsBatch(
+        issuer=issuer,
+        assertion=assertion,
+        recipients=recipients,
+        anchor_handler=eth_anchor_handler,
+        additional_per_recipient_fields=[
+            {"path": "$.expires", "field": "expires"},
+            {"path": "$.recipientProfile.favorite_food", "field": "favorite_food"},
+        ]
+
+    )
+    tx_id, final_certs = batch.run()
+    for cert in final_certs.values():
+        this_dict = cert.to_dict()
+        assert this_dict.get('expires') == EXPIRATION_DATE
+        assert this_dict.get('recipientProfile').get('favorite_food') == FOOD_DATA
+
+
+def test_additional_global_fields(issuer, assertion, recipients, eth_anchor_handler):
+    EXPIRATION_DATE = "2018-02-07T23:52:16.636+00:00"
+    FOOD_DATA = "pizza"
+
+    batch = issue.BlockcertsBatch(
+        issuer=issuer,
+        assertion=assertion,
+        recipients=recipients,
+        anchor_handler=eth_anchor_handler,
+        additional_global_fields=[
+            {"path": "$.expires", "value": EXPIRATION_DATE},
+            {"path": "$.recipientProfile.favorite_food", "value": FOOD_DATA},
+        ]
+
+    )
+    tx_id, final_certs = batch.run()
+    for cert in final_certs.values():
+        this_dict = cert.to_dict()
+        assert this_dict.get('expires') == EXPIRATION_DATE
+        assert this_dict.get('recipientProfile').get('favorite_food') == FOOD_DATA
+
+
+def test_additional_per_recipient_prevails_over_global_fields(issuer, assertion, recipients, eth_anchor_handler):
+    RECIPIENT_EXPIRATION_DATE = "2018-02-07T23:52:16.636+00:00"
+    RECIPIENT_FOOD_DATA = "pizza"
+    GLOBAL_EXPIRATION_DATE = "2018-02-07T23:52:16.636+00:00"
+    GLOBAL_FOOD_DATA = "pizza"
+    GLOBAL_PLAYER = "messi"
+
+    ADDITIONAL_FIELDS = {
+        "expires": RECIPIENT_EXPIRATION_DATE,
+        "favorite_food": RECIPIENT_FOOD_DATA
+    }
+
+    for recipient in recipients:
+        recipient.additional_fields = ADDITIONAL_FIELDS
+
+    batch = issue.BlockcertsBatch(
+        issuer=issuer,
+        assertion=assertion,
+        recipients=recipients,
+        anchor_handler=eth_anchor_handler,
+        additional_global_fields=[
+            {"path": "$.expires", "value": GLOBAL_EXPIRATION_DATE},
+            {"path": "$.recipientProfile.favorite_food", "value": GLOBAL_FOOD_DATA},
+            {"path": "$.recipientProfile.favorite_player", "value": GLOBAL_PLAYER},
+        ],
+        additional_per_recipient_fields=[
+            {"path": "$.expires", "field": "expires"},
+            {"path": "$.recipientProfile.favorite_food", "field": "favorite_food"},
+        ]
+
+    )
+    tx_id, final_certs = batch.run()
+    for cert in final_certs.values():
+        this_dict = cert.to_dict()
+        assert this_dict.get('expires') == RECIPIENT_EXPIRATION_DATE
+        assert this_dict.get('recipientProfile').get('favorite_food') == RECIPIENT_FOOD_DATA
+        assert this_dict.get('recipientProfile').get('favorite_player') == GLOBAL_PLAYER

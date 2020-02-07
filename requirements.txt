@@ -5,3 +5,4 @@ chainpoint==0.0.2
 pycoin==0.80
 attrdict==2.0.1
 web3==5.4.0
+jsonpath-rw==1.4.0

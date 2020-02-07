@@ -1,8 +1,9 @@
 import hashlib
 from datetime import datetime, timezone
-from typing import List, Any
+from typing import List, Any, Dict, AnyStr, Union, Generator
 
 from chainpoint.chainpoint import MerkleTools
+from jsonpath_rw import parse, Root, Child, Fields, DatumInContext
 from pycoin.serialize import h2b
 
 
@@ -11,7 +12,7 @@ def hash_byte_array(data):
     return hashed
 
 
-def ensure_string(value):
+def ensure_string(value: AnyStr) -> str:
     if isinstance(value, str):
         return value
     return value.decode('utf-8')
@@ -26,7 +27,7 @@ class MerkleTree(object):
     def __init__(self):
         self.tree = MerkleTools(hash_type='sha256')
 
-    def populate(self, node_generator) -> None:
+    def populate(self, node_generator: Generator) -> None:
         """
         Populate Merkle Tree with data from node_generator. This requires that node_generator yield byte[] elements.
         Hashes, computes hex digest, and adds it to the Merkle Tree
@@ -39,7 +40,7 @@ class MerkleTree(object):
 
     def get_root(self, binary=False) -> bytearray:
         """
-        Finalize tree and return the root, a byte array to anchor on a blockchain tx.
+        Finalize tree and return the Root, a byte array to anchor on a blockchain tx.
         :return:
         """
         self.tree.make_tree()
@@ -48,7 +49,7 @@ class MerkleTree(object):
             return h2b(ensure_string(merkle_root))
         return ensure_string(merkle_root)
 
-    def get_proof_generator(self, tx_id, signature_type, chain_name) -> dict:
+    def get_proof_generator(self, tx_id: AnyStr, signature_type: AnyStr, chain_name: AnyStr) -> Dict:
         """
         Returns a generator of Merkle Proofs in insertion order.
 
@@ -95,7 +96,7 @@ def validate_required_fields_interactively(some_object: Any, required_fields: Li
         ask_input_if_missing(some_object, field_name)
 
 
-def ask_input_if_missing(some_object: Any, field_name: str, attempt: int = 0, max_retries: int = 2) -> None:
+def ask_input_if_missing(some_object: Any, field_name: AnyStr, attempt: int = 0, max_retries: int = 2) -> None:
     """Asks the user for input if any of the required fields are missing from the object."""
     if attempt >= max_retries:
         raise Exception(
@@ -114,7 +115,7 @@ def ask_input_if_missing(some_object: Any, field_name: str, attempt: int = 0, ma
             ask_input_if_missing(some_object, field_name, attempt=attempt, max_retries=max_retries)
 
 
-def factor_in_new_try(number, try_count) -> int:
+def factor_in_new_try(number: Union[int, float], try_count: int) -> Union[int, float]:
     """Increase the given number with 10% with each try."""
     factor = float(f"1.{try_count}")
     return int(number * factor)
@@ -124,6 +125,63 @@ def create_iso8601_tz() -> str:
     """Get the current datetime in ISO 8601 format."""
     ret = datetime.now(timezone.utc)
     return ret.isoformat()
+
+
+def get_path(match: 'DatumInContext') -> None:
+    """Return an iterator based upon MATCH.PATH. Each item is a path component, start from the outer most item."""
+    if match.context is not None:
+        for path_element in get_path(match.context):
+            yield path_element
+        yield str(match.path)
+
+
+def recurse(child: 'Child', fields_reverse: List) -> None:
+    """Recurse fields."""
+    if isinstance(child, Fields):
+        fields_reverse.append(child.fields[0])
+    else:
+        if not isinstance(child, Child):
+            raise Exception('Unexpected input while recursing for additional fields.')
+        if not isinstance(child.left, Root):
+            recurse(child.left, fields_reverse)
+        recurse(child.right, fields_reverse)
+
+
+def update_dict(raw_dict: Dict, path: AnyStr, value: AnyStr) -> Dict:
+    """Update dictionary's PATH with VALUE. Return updated dict"""
+    try:
+        first = next(path)
+        if first.startswith('[') and first.endswith(']'):
+            try:
+                first = int(first[1:-1])
+            except ValueError:
+                pass
+        raw_dict[first] = update_dict(raw_dict[first], path, value)
+        return raw_dict
+    except StopIteration:
+        return value
+
+
+def set_dict_field(raw_dict: Dict, path: AnyStr, value: AnyStr) -> Dict:
+    """Set dictionary's `path` with `value`. Return the updated dict"""
+    jp = parse(path)
+    matches = jp.find(raw_dict)
+    if matches:
+        for match in matches:
+            jsonpath_expr = get_path(match)
+            raw_dict = update_dict(raw_dict, jsonpath_expr, value)
+    else:
+        fields = []
+        recurse(jp, fields)
+        temp_json = raw_dict
+        for idx, f in enumerate(fields):
+            if f in temp_json:
+                temp_json = temp_json[f]
+            elif idx == len(fields) - 1:
+                temp_json[f] = value
+            else:
+                raise (Exception(f"Invalid path : '{'.'.join(fields)}' while setting dict field."))
+    return raw_dict
 
 
 NOW = create_iso8601_tz()
