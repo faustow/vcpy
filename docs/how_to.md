@@ -9,7 +9,7 @@
     1. [Anchor handler](#Anchor-handler)
     
 ## Overview
-When issuing Blockcerts, using batches is the most cost-effective way of doing so since a single transaction is needed to anchor potentially many certificates. Instead of anchoring a hash of each certificate in the blockchain, a Merkle Tree is created for the batch and its root is the one being anchored. Then the different certificates are updated with the Merkle Proof, which basically describes which hashes were used (along with the hash of the current certificate) to finally create a Merkle Tree with the anchored Merkle Root.
+When issuing Blockcerts, using batches is the most cost-effective way of doing so since a single transaction is needed to anchor potentially many certificates. Instead of anchoring a hash of each certificate in the blockchain, a Merkle Tree is created for the batch and its Root is the one being anchored. Then the different certificates are updated with the Merkle Proof, which basically describes which hashes were used (along with the hash of the current certificate) to finally create a Merkle Tree with the anchored Merkle Root.
 
 In order to issue a Blockcerts Batch you need to create the following things:
 - An Issuer
@@ -30,7 +30,7 @@ tx_id, final_certs = batch.run()
 ```
 
 And that's it! There you have:
-- A transaction id in `tx_id`, that tells you which transaction in the given blockchain contains the merkle root
+- A transaction id in `tx_id`, that tells you which transaction in the given blockchain contains the Merkle Root
 - A list of `final_certs` (python dictionaries) which are all the final Blockcerts you just issued.
 
 ## Creating the required components
@@ -39,10 +39,10 @@ Currently there's a basic implementation of all required models, let us examine 
 ### Issuer
 The Issuer model represents a basic version of an `Issuer` as defined by the Blockcerts standard, and contains info about who issues the Blockcert. All the required parameters are strings and are quite self explanatory but here's a summary:
 - `name`: Name of the issuer
-- `url`: Url to the issuer's public profile (must resolve to a valid jsonld)
+- `url`: Url to the issuer's public profile (must resolve to a valid JSON-LD)
 - `email`: Email to contact the issuer
 - `image`: base64-encoded PNG or SVG that represents the issuer (a logo for example)
-- `revocation_list`: Url to the issuer's public revocation list (must resolve to a valid jsonld)
+- `revocation_list`: Url to the issuer's public revocation list (must resolve to a valid JSON-LD)
 - `public_key`: Public key owned by the issuer (or authorized to issue on their behalf).
 - `signature_name`: (optional) Name of the person signing the certificate
 - `signature_job_title`: (optional) Title of the person signing the certificate
@@ -117,11 +117,11 @@ recipients = [
 ```
 
 ### Anchor Handler
-An Anchor Handler is an interface for anchoring mechanisms, basically it handles anchoring to a blockchain and updating the unsigned certs with transaction id and merkle proof. All the required parameters are strings, and here's what they mean:
+An Anchor Handler is an interface for anchoring mechanisms, basically it handles anchoring to a blockchain and updating the unsigned certs with transaction id and Merkle Proof. All the required parameters are strings, and here's what they mean:
 
 - `chain_name`: name of the chain, for now one of 'ethereumMainnet' or 'ethereumRopsten', in the future at least
 'bitcoinMainnet', 'bitcoinRegtest' and 'bitcoinTestnet' should be added.
-- `signature_field`: transaction field where the merkle root will be posted. For now only 'ETHData' will work, in
+- `signature_field`: transaction field where the Merkle Root will be posted. For now only 'ETHData' will work, in
 the future at least 'BTCOpReturn' should be added.
 ```python
 from verifiable_credentials.components import EthereumAnchorHandler
