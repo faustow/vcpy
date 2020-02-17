@@ -12,6 +12,7 @@ There are many kinds of verifiable credentials like W3C's Verifiable Claims, Blo
 1. [Status](#Status)
 1. [How to issue Blockcerts](how_to.md)
 1. [Integrating `vcpy` into a web service](webservice.md)
+1. [Wrapping Blockcerts with Verifiable Claims (v1 data model)](#vcdm.md)
 
 
 ## Why 
