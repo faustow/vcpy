@@ -11,11 +11,12 @@ from verifiable_credentials.components import Issuer, Assertion, Recipient, Ethe
 def issuer() -> Issuer:
     yield Issuer(
         name='Chalmers University of Technology',
-        url='https://gist.githubusercontent.com/faustow/98db76b26b4d297d0eb98d499e733f77/raw/71f034f76d50fbe8656d6843d72ba1ed42581837/vc_issuer.json',
+        id='https://gist.githubusercontent.com/faustow/98db76b26b4d297d0eb98d499e733f77/raw/71f034f76d50fbe8656d6843d72ba1ed42581837/vc_issuer.json',
         email='info@chalmers.se',
         image='',
         revocation_list='https://gist.githubusercontent.com/faustow/07a66855d713409067ff28e10778e2dd/raw/e08bb6d6f1350367d3f6d4f805ab3b1466b584d7/revocation-list-testnet.json',
         public_key=os.environ.get('PUBLIC_KEY'),
+        main_url='https://www.dock.io',
         signature_name='Napoleon Dynamite',
         signature_job_title='President',
         signature_image='',

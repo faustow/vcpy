@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from time import sleep
+from typing import Dict
 
 from attrdict import AttrDict
 from web3 import Web3
@@ -14,34 +15,38 @@ class Issuer:
     More at: https://github.com/IMSGlobal/cert-schema/blob/master/cert_schema/2.0/issuerSchema.json
 
     :param name: Name of the issuer
-    :param url: Url to the issuer's public profile (must resolve to a valid jsonld)
+    :param id: Url to the issuer's public profile (must resolve to a valid jsonld)
     :param email: Email to contact the issuer
     :param image: base64-encoded PNG or SVG that represents the issuer (a logo for example)
     :param revocation_list: Url to the issuer's public revocation list (must resolve to a valid jsonld)
     :param public_key: Public key owned by the issuer (or authorized to issue on their behalf).
+    :param main_url: Url to the issuer's main website (must resolve to an eventual 200)
     :param signature_name: (optional) Name of the person signing the certificate
     :param signature_job_title: (optional) Title of the person signing the certificate
     :param signature_image: (optional) base64-encoded PNG or SVG that represents the signature of the person signing.
+    :param intro_url: Url to the issuer's intro website (must resolve to an eventual 200)
 
     Note: All three of signature_name, signature_job_title and signature_image must exist in order for the signature
     section to be added to the Blockcert.
     """
-    REQUIRED_FIELDS = ["name", "url", "email", "revocation_list", "public_key"]
+    REQUIRED_FIELDS = ["name", "id", "email", "revocation_list", "public_key", "main_url"]
 
     def __init__(
             self: str,
             name: str,
-            url: str,
+            id: str,
             email: str,
             image: str,
             revocation_list: str,
             public_key: str,
+            main_url: str,
             signature_name: str = "",
             signature_job_title: str = "",
-            signature_image: str = ""
+            signature_image: str = "",
+            intro_url: str = "",
     ):
         self.name = name
-        self.url = url
+        self.id = id
         self.email = email
         self.image = image
         self.revocation_list = revocation_list
@@ -49,20 +54,24 @@ class Issuer:
         self.signature_name = signature_name
         self.signature_job_title = signature_job_title
         self.signature_image = signature_image
+        self.main_url = main_url
+        self.intro_url = intro_url
 
         validate_required_fields(self, self.REQUIRED_FIELDS)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         return dict(
             name=self.name,
-            url=self.url,
+            id=self.id,
             email=self.email,
             image=self.image,
             revocation_list=self.revocation_list,
             public_key=self.public_key,
+            main_url=self.main_url,
             signature_name=self.signature_name,
             signature_job_title=self.signature_job_title,
             signature_image=self.signature_image,
+            intro_url=self.intro_url,
         )
 
 
@@ -89,7 +98,7 @@ class Assertion:
         self.display_html = display_html
         validate_required_fields(self, self.REQUIRED_FIELDS)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         return dict(
             id=self.id,
             name=self.name,
@@ -121,7 +130,7 @@ class Recipient:
         self.additional_fields = additional_fields
         validate_required_fields(self, self.REQUIRED_FIELDS)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         return dict(
             name=self.name,
             email=self.email,
@@ -199,6 +208,19 @@ class EthereumAnchorHandler(AnchorHandler):
         self.account_to = account_to
         self.chain_name = chain_name
 
+    def to_dict(self) -> Dict:
+        return dict(
+            node_url=self.node_url,
+            public_key=self.public_key,
+            private_key=self.private_key,
+            key_created_at=self.key_created_at,
+            max_retry=self.max_retry,
+            gas_price=self.gas_price,
+            gas_limit=self.gas_limit,
+            account_to=self.account_to,
+            chain_name=self.chain_name,
+        )
+
     def _get_signed_tx(self, merkle_root: str, gas_price: int, gas_limit: int, try_count: int) -> AttrDict:
         """Prepare a raw transaction and sign it with the private key."""
         nonce = self.web3.eth.getTransactionCount(self.public_key)
@@ -265,7 +287,7 @@ class Blockcert:
         self.anchor_tx_id = None
         self.proof = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict:
         """Get a dictionary representation of a Blockcert."""
         raw_dict = {
             "@context": [
@@ -300,10 +322,10 @@ class Blockcert:
                 "description": self.assertion.description,
                 "image": self.assertion.image,
                 "issuer": {
-                    "id": self.issuer.url,
+                    "id": self.issuer.id,
                     "type": "Profile",
                     "name": self.issuer.name,
-                    "url": self.issuer.url,
+                    "url": self.issuer.main_url,
                     "email": self.issuer.email,
                     "image": self.issuer.image,
                     "revocationList": self.issuer.revocation_list
@@ -320,6 +342,8 @@ class Blockcert:
                 "publicKey": "ecdsa-koblitz-pubkey:" + self.issuer.public_key
             }
         }
+        if self.issuer.intro_url:
+            raw_dict["badge"]["issuer"]["introductionUrl"] = self.issuer.intro_url
         if self.assertion.display_html:
             raw_dict["displayHtml"] = self.assertion.display_html
         if self.issuer.signature_image and self.issuer.signature_job_title and self.issuer.signature_name:
