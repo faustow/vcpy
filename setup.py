@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="vcpy",
-    version="0.0.1",
+    version="0.0.2",
     author="Fausto Woelflin",
     author_email="fausto@dock.io",
     description="Issue verifiable credentials with ease.",
