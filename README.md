@@ -2,7 +2,7 @@
 
 > Easily issue verifiable credentials (like Blockcerts)
     
-![](https://github.com/docknetwork/vcpy/workflows/pytest/badge.svg)
+![](https://github.com/faustow/vcpy/workflows/pytest/badge.svg)
 
 ## Table of contents
 1. [Background](#background)
@@ -41,11 +41,11 @@ And done!
 Find our documentation [here](docs/index.md).
 
 ## Contributing
-1. Fork it (<https://github.com/docknetwork/vcpy/fork>)
+1. Fork it (<https://github.com/faustow/vcpy/fork>)
 1. Create your feature branch (`git checkout -b feature/fooBar`)
 1. Commit your changes (`git commit -am 'Add some fooBar'`)
 1. Push to the branch (`git push origin feature/fooBar`)
 1. Create a new Pull Request
 
 ## Contact
-This library is maintained by [Fausto Woelflin](https://www.linkedin.com/in/faustowoelflin) at [Dock](https://dock.io).
+This library is maintained by [Fausto Woelflin](https://www.linkedin.com/in/faustow/).
